@@ -19,7 +19,7 @@ Documentação do Código: Integração de APIs e Geração de Banco de Dados
 Kevelin Suellen de Souza Oliveira
 Turma: 58875
 Data de criação: 22/07/2024
-Última modificação: 17/08/2024
+Última modificação: 05/09/2024
 
 
 
@@ -56,20 +56,17 @@ Referências	6
 
 
 Objetivo
-Este projeto tem por finalidade extrair dados da API do YouTube para analisar e comparar canais na plataforma. O objetivo é reunir informações relevantes sobre o desempenho dos canais e dos vídeos, possibilitando uma análise detalhada e comparativa. Foi necessário a instalação das bibliotecas Pandas, google-api-python-client.
+Este projeto tem por finalidade extrair dados da API do YouTube para analisar e comparar canais na plataforma. O objetivo é reunir informações relevantes sobre o desempenho dos canais e dos vídeos, possibilitando uma análise detalhada e comparativa. 
 
 Público alvo
 Este código é voltado para analistas de dados e profissionais de marketing digital que desejam fornecer insights valiosos para criadores de conteúdo. Ele permite coletar métricas importantes para acompanhar o crescimento de canais e identificar tópicos que possam aumentar o engajamento do público.
 Saída
-O código gerado nos fornece um arquivo chamado 'Análise_Youtube.xlsx' e 4 abas sendo elas:
-'Estatísticas dos Canais' – com as colunas channel_id, channel_name, published_date, published_tim, country, subscribers, view, total_videos e playlist_id;
-'Detalhes dos Vídeos' - channel_name, vídeo_id, title, published_date, published_time, duration, category_id, views, likes e comments;
-'Uploads Mensais' - channel_name, month e uploads;
-'Média de Engajamento' – metric, avarege e channel_name.
+O código gerado nos fornece um arquivo Análise_Youtube.db.
 
 Nível de privacidade
 Os dados coletados são públicos, pois podem ser acessados por qualquer usuário que navegue pelo Youtube.
-Entretando, para conseguir acesso a API, é necessário solicitar uma chave. O acesso a chave é feito através do google clound. 
+Entretando, para conseguir acesso a API, é necessário solicitar uma chave. O acesso a chave é feito através do google clound. A seguir segue um tutorial do Google de como obter a chave:
+https://cloud.google.com/docs/authentication/api-keys?hl=pt-br
 
 Pré requisitos
 Ambientes
@@ -91,16 +88,25 @@ Para acessar a API, é necessário criar um projeto no Google Cloud Console, hab
 
 Funções criadas
 •	get_channel_id(youtube, custom_url):
-Busca o ID do canal usando a API e retorna o ID encontrado.
-•	get_channel_stats(youtube, channel_ids):
-Obtém estatísticas dos canais, como número de inscritos, visualizações e vídeos publicados.
-•	get_video_ids(youtube, playlist_id):
-Retorna uma lista contendo os IDs dos vídeos encontrados.
-•	get_video_details(youtube, video_ids, channel_name):
-Obéem detalhes dos vídeos, como título, data de publicação, visualizações, curtidas e comentários.
-•	get_channel_activity(youtube, playlist_id):
-Calcula a frequência mensal de uploads e o engajamento médio (visualizações, curtidas e comentários) dos vídeos do canal.
+  youtube: Este é o objeto da API que você usa para se conectar ao YouTube. Ele contém as credenciais e métodos para fazer as requisições à API.
+ custom_url: Este é o URL personalizado do canal do YouTube. O parâmetro serve como entrada para que a API identifique e busque o ID do canal associado a essa URL.
 
+•	get_channel_stats(youtube, channel_ids):
+  youtube: O objeto da API do YouTube, necessário para realizar a conexão e buscar as informações dos canais.
+  channel_ids: Este é o ID ou lista de IDs dos canais de YouTube cujas estatísticas você quer obter. Esses IDs são únicos e identificam os canais na plataforma.
+
+•	get_video_ids(youtube, playlist_id):
+youtube: O objeto da API do YouTube usado para buscar os vídeos da lista de reprodução (playlist).
+playlist_id: O ID da playlist de onde você deseja buscar os vídeos. Cada canal tem uma playlist de uploads, que pode ser usada para coletar os vídeos do canal.
+
+•	get_video_details(youtube, video_ids, channel_name):
+youtube: O objeto da API do YouTube usado para buscar detalhes sobre os vídeos.
+video_ids: Uma lista contendo os IDs dos vídeos que você quer analisar. Cada vídeo no YouTube tem um ID único.
+channel_name: O nome do canal do YouTube. Este parâmetro pode ser usado para organizar ou identificar os vídeos por canal ao coletar os detalhes.
+
+•	get_channel_activity(youtube, playlist_id):
+youtube: O objeto da API que faz a conexão e coleta dados da playlist do canal.
+playlist_id: O ID da playlist de vídeos enviados pelo canal. A API usa este ID para encontrar os vídeos e calcular métricas como frequência de uploads e engajamento.
 Tratamentos aplicados
 •	Tratamento de datas
 Formatação: A parte da A data é convertida para um objeto datetime do Pandas e formatada para o padrão dia/mês/ano. E como as datas são separadas usando o separador 'T' elas são tratadas para que venham separadas por barras (/).
@@ -154,8 +160,25 @@ average - float64
 channel_name – object
 
 Exemplo de consulta
-Para executar uma consulta as tabelas, foi usado o método head() para visualizar as primeiras linhas do código a fim de verificar como estão sendo extraídos os dados.
-Exemplo: avg_engagement_df.head(3) – Nos traz as primeiras 3 linhas da tabela Média de enganjamento.
+conn = sqlite3.connect('Análise_Youtube.db')
+channel_stats.to_sql('Estatísticas dos Canais', conn, if_exists='replace', index=False)
+all_video_details_df.to_sql('Detalhes dos Vídeos', conn, if_exists='replace', index=False)
+monthly_uploads_df.to_sql('Uploads Mensais', conn, if_exists='replace', index=False)
+avg_engagement_df.to_sql('Média de Engajamento', conn, if_exists='replace', index=False)
+
+query = "SELECT * FROM 'Estatísticas dos Canais'"
+df = pd.read_sql(query, conn)
+print(df)
+
+                 channel_id     channel_name published_date published_time  \
+0  UCNWlx_0XxpUkci6PnCwH_dQ     Bruna Vieira     15/11/2011       01:47:55   
+1  UCy9xDEfMD8jrXU3NatFLLtw  Taciele Alcolea     08/09/2009       15:51:09   
+2  UC5qJINQ80-zvtGQ4fq3kSRQ     Fabi Santina     02/10/2010       01:53:56   
+
+  country  subscribers      views  total_videos               playlist_id  
+0      BR      1330000   95343145           826  UUNWlx_0XxpUkci6PnCwH_dQ  
+1      BR      5860000  888883572          2275  UUy9xDEfMD8jrXU3NatFLLtw  
+2      BR      1820000  330503095          2371  UU5qJINQ80-zvtGQ4fq3kSRQ  
 
 Versionamento
 Um arquivo requiriment.txt foi gerado e será fornecido juntamente com a documentação deste projeto.
